@@ -1,31 +1,64 @@
-TOR VERCINEMA
+# 🎥 Tor Vercinema: Multisala Management System
 
-💡 Idea del Progetto
-L'obiettivo del progetto è la progettazione e l'implementazione di un database relazionale capace di gestire interamente l'ecosistema di un cinema multisala, dalla programmazione dei film alla vendita dei biglietti.
+![Database Relazionale](https://img.shields.io/badge/Database-MySQL-blue?style=for-the-badge&logo=mysql)
+![Version](https://img.shields.io/badge/Version-1.0-green?style=for-the-badge)
+![Academic Project](https://img.shields.io/badge/Project-Academic-orange?style=for-the-badge)
 
-🚀 Perché un Database Relazionale?
-L'uso di un DBMS relazionale è indispensabile per superare le inefficienze delle gestioni manuali o basate su fogli di calcolo (es. Excel). Un database strutturato garantisce:
+> **Tor-Vercinema** è un sistema informativo avanzato progettato per la gestione operativa di un cinema multisala. Automatizza l'intero ciclo di vita cinematografico: dalla gestione delle anagrafiche alla programmazione del palinsesto, fino alla vendita sicura dei biglietti in tempo reale.
 
-Gestione della Concorrenza: Permette a centinaia di utenti di consultare il palinsesto e acquistare biglietti simultaneamente, garantendo meccanismi di lock che azzerano il rischio di overbooking (evitando la vendita dello stesso posto a più persone).
+---
 
-Integrità dei Dati: Tramite i vincoli di integrità, il sistema impedisce l'errore umano, come la sovrapposizione di due film nella stessa sala alla stessa ora o l'assegnazione di posti inesistenti.
+## 📐 Architettura del Database (Schema Logico)
+Il cuore del sistema è strutturato per garantire scalabilità e coerenza dei dati. Di seguito la rappresentazione logica delle entità e delle loro relazioni:
 
-Sicurezza e Astrazione: Centralizza i dati in un luogo sicuro, implementando il Role Based Access Control (RBAC) per mostrare solo le informazioni pertinenti all'utente, proteggendo dati sensibili e finanziari.
+![Schema ER Logico](DIAGRAMS/ER_Logico.png)
 
-📝 Descrizione del Modello
-L'implementazione nasce per risolvere le criticità riscontrate nei modelli tradizionali, focalizzandosi sulle necessità dei diversi attori coinvolti:
+---
 
-👤 Il Cliente (Utente Finale)
-Esigenza: Evitare code fisiche e assicurarsi il posto desiderato in anticipo.
+## 💡 Idea del Progetto
+L'obiettivo è fornire un'infrastruttura solida capace di gestire l'intero ecosistema di un cinema moderno. Il progetto si focalizza sulla risoluzione delle inefficienze dei sistemi manuali, centralizzando i dati per offrire un'esperienza fluida sia agli operatori che ai clienti.
 
-Soluzione: Interfaccia veloce per consultazione orari, disponibilità posti in tempo reale e acquisto immediato.
+## 🚀 Perché un Database Relazionale?
+In un contesto dove la precisione è tutto, un **DBMS relazionale** è indispensabile per garantire:
 
-💼 L'Amministratore (Gestore)
-Esigenza: Centralizzazione e controllo totale.
+* **⚡ Gestione della Concorrenza**: Supporto a centinaia di utenti simultanei, azzerando il rischio di *overbooking* attraverso meccanismi di lock e transazioni sicure.
+* **🛡️ Integrità dei Dati**: Vincoli strutturali che impediscono errori umani (es. sovrapposizione di film nella stessa sala o assegnazione di posti inesistenti).
+* **🔒 Sicurezza e Astrazione**: Implementazione del *Role Based Access Control (RBAC)* per proteggere i dati sensibili e finanziari.
 
-Soluzione: Strumenti automatizzati per prevenire errori di programmazione e reportistica finanziaria in tempo reale (incassi) per l'ottimizzazione del palinsesto.
+---
 
-🎫 Lo Staff (Operatore)
-Esigenza: Rapidità operativa e sicurezza.
+## 📝 User Roles & Requirements
+Il sistema risponde alle necessità specifiche di ogni attore coinvolto:
 
-Soluzione: Strumento di validazione rapida dei titoli di accesso all'ingresso delle sale, con accesso limitato alle sole funzioni operative, escludendo i dati sensibili o finanziari.
+| Ruolo | Obiettivo Primario | Soluzione Tecnica |
+| :--- | :--- | :--- |
+| **👤 Cliente** | Zero code e posto garantito. | Consultazione e acquisto real-time. |
+| **💼 Admin** | Controllo totale e analisi. | Automazione palinsesto e report incassi. |
+| **🎫 Staff** | Rapidità agli ingressi. | Validazione ticket sicura e mirata. |
+
+---
+
+## 🛠️ Struttura del Repository
+Il progetto segue un'organizzazione modulare e pulita:
+
+* 📂 `DOCS/`: Specifiche tecniche, manuali e documentazione accademica.
+* 📂 `DIAGRAMS/`: Schemi E-R (Concettuali e Logici) in alta risoluzione.
+* 📂 `SQL/`: Script DDL per lo schema, DML per i dati di test e Query analitiche.
+* 📂 `APP/`: *(Work in Progress)* Interfaccia web interattiva.
+
+---
+
+## ⚙️ Funzionalità & Vincoli di Business
+* ✅ **Unicità Posto**: Impossibilità tecnica di vendere lo stesso posto per la stessa proiezione.
+* ✅ **Capienza Dinamica**: Controllo automatico della saturazione delle sale.
+* ✅ **Validità Spaziale**: Sistema di controllo che impedisce prenotazioni su sale errate.
+* ✅ **Security First**: Archiviazione delle password tramite algoritmi di Hash (BCrypt).
+
+---
+
+## 👥 Autori
+* **Dario Pimpini** - *Database Designer & Developer*
+* **Daniele Panella** - *Database Designer & Developer*
+
+---
+*Progetto realizzato per il corso di "Basi di Dati e di Conoscenza" - Università di Roma Tor Vergata.*
