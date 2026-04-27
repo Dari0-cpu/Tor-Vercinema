@@ -61,4 +61,4 @@ Il progetto segue un'organizzazione modulare e pulita:
 * **Daniele Panella** - *Database Designer & Developer*
 
 ---
-*Progetto realizzato per il corso di "Basi di Dati e di Conoscenza" - Università di Roma Tor Vergata.*
+*Progetto realizzato per il corso di "Basi di Dati e di Conoscenza" - Università di Roma Tor Vergata*
