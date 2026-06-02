@@ -1,63 +1,115 @@
 CREATE DATABASE IF NOT EXISTS tor_vercinema;
 USE tor_vercinema;
 
--- 2. Tabella FILM 
+-- 1. CREAZIONE TABELLE FORTI (Senza Foreign Key)
+
+-- Tabella FILM 
 CREATE TABLE FILM (
-    ID_Film INT PRIMARY KEY AUTO_INCREMENT, -- Identificativo univoco 
-    Titolo VARCHAR(255) NOT NULL,            -- Titolo del film
-    Genere VARCHAR(100),                    -- Categoria cinematografica 
-    Durata INT,                             -- Durata in minuti 
-    Regista VARCHAR(255)                    -- Nome e cognome del regista 
-) ENGINE=InnoDB; 
+    ID_Film int primary key auto_increment,               -- Identificativo univoco 
+    Titolo varchar(255) not null,                         -- Titolo del film
+    Durata int                                            -- Durata in minuti 
+        check(Durata > 0),                                -- La durata non può essere negativa
+    Regista varchar(255),                                 -- Nome e cognome del regista
+    Classificazione enum('T', '6+', 'VM14', 'VM18'),      -- Classificazione del film
+    Casa_Produzione varchar(255),                         -- Casa cinematografica
+    Scadenza_Diritti date not null,                       -- Data di scadenza diritti di trasmissione
+    Trama text                                            -- Usato TEXT per consentire testi lunghi
+) engine=InnoDB; 
 
--- 3. Tabella SALA
+-- Tabella GENERI
+CREATE TABLE GENERI (
+    ID_Genere int primary key auto_increment,             -- Chiave primaria genere
+    Nome_Genere varchar(50) not null unique               -- Genere non nullo e unico
+) engine=InnoDB;
+
+-- Tabella SALA
 CREATE TABLE SALA (
-    ID_Sala INT PRIMARY KEY,                -- Numero o ID della sala 
-    Capienza_Totale INT NOT NULL            -- Numero massimo di posti
-) ENGINE=InnoDB; 
+    ID_Sala int primary key auto_increment,               -- Chiave primaria sala
+    Capienza_Totale int not null                          -- Capienza massima della sala
+        check(Capienza_Totale >= 1)
+) engine=InnoDB;
 
--- 4. Tabella POSTO
-CREATE TABLE POSTO (
-    ID_Posto INT PRIMARY KEY,               -- Identificativo univoco del posto 
-    Fila CHAR(1) NOT NULL,                  -- Lettera della fila (es. 'A') 
-    Numero INT NOT NULL,                    -- Numero del posto nella fila 
-    FK_Sala INT NOT NULL,                   -- Riferimento alla sala 
-    FOREIGN KEY (FK_Sala) REFERENCES SALA(ID_Sala) 
-        ON UPDATE CASCADE ON DELETE CASCADE -- Vincolo di integrità referenziale
-) ENGINE=InnoDB;
-
--- 5. Tabella PROIEZIONE 
-CREATE TABLE PROIEZIONE (
-    ID_Proiezione INT PRIMARY KEY,          -- Identificativo dell'evento 
-    Data_Ora DATETIME NOT NULL,             -- Data e orario di inizio
-    Prezzo DECIMAL(5,2) NOT NULL,           -- Costo del biglietto (es. 10.50)
-    FK_Film INT NOT NULL,                   -- Riferimento al film 
-    FK_Sala INT NOT NULL,                   -- Riferimento alla sala 7]
-    FOREIGN KEY (FK_Film) REFERENCES FILM(ID_Film) ON UPDATE CASCADE,
-    FOREIGN KEY (FK_Sala) REFERENCES SALA(ID_Sala) ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
--- 6. Tabella UTENTE 
+-- Tabella UTENTE
 CREATE TABLE UTENTE (
-    ID_Utente INT PRIMARY KEY,              -- Identificativo utente 
-    Username VARCHAR(50) UNIQUE NOT NULL,   -- Nome utente univoco
-    Email VARCHAR(100) UNIQUE NOT NULL,     -- Indirizzo email
-    Password VARCHAR(255) NOT NULL,         -- Hash della password 
-    Ruolo ENUM('Cliente', 'Staff', 'Admin') NOT NULL -- Business Rule sui ruoli 
-) ENGINE=InnoDB;
+    ID_Utente int primary key auto_increment,             -- Chiave primaria utente
+    Username varchar(50) unique not null,                 -- Username unico
+    Email varchar(100) unique not null,                   -- Email utente
+    Password varchar(255) not null,                       -- Hash della password
+    Data_Nascita date not null,                           -- Data di nascita per età e sconti
+    Ruolo enum('Cliente', 'Staff', 'Admin')               -- Gestione permessi RBAC
+) engine=InnoDB;
 
--- 7. Tabella PRENOTAZIONE
+
+-- 2. CREAZIONE TABELLE DIPENDENTI (Con Foreign Key)
+
+-- Tabella FILM_GENERI
+CREATE TABLE FILM_GENERI (
+    FK_Film int not null,                                 
+    FK_Genere int not null,                               
+    
+    primary key (FK_Film, FK_Genere),                     -- Chiave primaria composta
+    
+    foreign key (FK_Film) references FILM(ID_Film)
+        on delete cascade on update cascade,              
+    
+    foreign key (FK_Genere) references GENERI(ID_Genere) 
+        on delete cascade on update cascade               
+) engine=InnoDB;
+
+-- Tabella POSTO
+CREATE TABLE POSTO (
+    ID_Posto int primary key auto_increment,              
+    Fila char(1) not null,                                
+    Numero int not null,                                  
+    FK_Sala int not null,                                 
+    
+    foreign key (FK_Sala) references SALA(ID_Sala)
+        on delete cascade on update cascade               
+) engine=InnoDB;
+
+-- Tabella PROIEZIONE
+CREATE TABLE PROIEZIONE (
+    ID_Proiezione int primary key auto_increment,         
+    Data_Ora datetime not null,                           
+    Prezzo decimal(5,2) not null,                       
+        check (Prezzo >= 0),                             
+    FK_Film int not null,                                 
+    FK_Sala int not null,                                 
+    
+    foreign key (FK_Film) references FILM(ID_Film)
+        on delete cascade on update cascade,              
+    foreign key (FK_Sala) references SALA(ID_Sala)
+        on delete cascade on update cascade               
+) engine=InnoDB;
+
+-- Tabella RECENSIONE (messo al singolare per coerenza)
+CREATE TABLE RECENSIONE (
+    ID_Recensione int primary key auto_increment,         
+    Voto int not null                                     
+        check (Voto >= 0 AND Voto <= 5),                  
+    Commento text,                                        
+    Data_Scrittura datetime,                              
+    FK_Utente int not null,                               
+    FK_Film int not null,                                 
+    
+    foreign key (FK_Utente) references UTENTE(ID_Utente)
+        on delete cascade on update cascade,              
+    foreign key (FK_Film) references FILM(ID_Film)
+        on delete cascade on update cascade               
+) engine=InnoDB;
+
+-- Tabella PRENOTAZIONE
 CREATE TABLE PRENOTAZIONE (
-    ID_Prenotazione INT PRIMARY KEY AUTO_INCREMENT, -- Numero del ticket 
-    Data_Acquisto TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Momento della transazione 
-    FK_Utente INT NOT NULL,                  -- Chi prenota 
-    FK_Proiezione INT NOT NULL,              -- Quale spettacolo
-    FK_Posto INT NOT NULL,                   -- Quale posto
+    ID_Prenotazione int primary key auto_increment,
+    Data_Acquisto datetime not null,                      
+    FK_Proiezione int not null,
+    FK_Posto int not null,
+    FK_Utente int not null,
     
-    FOREIGN KEY (FK_Utente) REFERENCES UTENTE(ID_Utente),
-    FOREIGN KEY (FK_Proiezione) REFERENCES PROIEZIONE(ID_Proiezione),
-    FOREIGN KEY (FK_Posto) REFERENCES POSTO(ID_Posto),
-    
-    -- Vincolo di Unicità: un posto non può essere venduto due volte per la stessa proiezione 
-    UNIQUE (FK_Proiezione, FK_Posto)
-) ENGINE=InnoDB;
+    foreign key (FK_Proiezione) references PROIEZIONE(ID_Proiezione)
+        on delete cascade on update cascade,              
+    foreign key (FK_Posto) references POSTO(ID_Posto)
+        on delete cascade on update cascade,              
+    foreign key (FK_Utente) references UTENTE(ID_Utente)
+        on delete cascade on update cascade               
+) engine=InnoDB;
