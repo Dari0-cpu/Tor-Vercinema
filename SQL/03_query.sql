@@ -30,13 +30,13 @@ values ('2026-06-20 21:00:00', 8.50, 3, 2);
 
 -- 6. operazione 06: cancellazione automatica delle proiezioni passate (pulizia db)
 delete from proiezione 
-where data_ora < now();
+where TIMESTAMPDIFF(year, data_ora, NOW()) >=2;
 
--- 7. operazione 07: cancellazione prenotazioni legate a proiezioni terminate usando una join
+-- 7. operazione 07: cancellazione prenotazioni legate a proiezioni terminate (scarto di 2 anni) usando una join
 delete pr
 from prenotazione pr
 join proiezione p on pr.fk_proiezione = p.id_proiezione
-where p.data_ora < now();
+where TIMESTAMPDIFF(year, p.data_ora, NOW()) >= 2;
 
 -- 8. subquery con is null: mostra i film in catalogo che non hanno ricevuto nessuna prenotazione
 select f.titolo
