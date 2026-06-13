@@ -107,7 +107,7 @@ CREATE TABLE PRENOTAZIONE (
     FK_Utente int not null,
     
     foreign key (FK_Proiezione) references PROIEZIONE(ID_Proiezione)
-        on delete cascade on update cascade,              
+		on delete restrict on update cascade,            
     foreign key (FK_Posto) references POSTO(ID_Posto)
         on delete cascade on update cascade,              
     foreign key (FK_Utente) references UTENTE(ID_Utente)

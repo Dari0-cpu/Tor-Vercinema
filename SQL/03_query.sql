@@ -28,15 +28,15 @@ values (now(), 1, 15, 2);
 insert into proiezione (data_ora, prezzo, fk_film, fk_sala) 
 values ('2026-06-20 21:00:00', 8.50, 3, 2);
 
--- 6. operazione 06: cancellazione automatica delle proiezioni passate (pulizia db)
-delete from proiezione 
-where TIMESTAMPDIFF(year, data_ora, NOW()) >=2;
+-- 6. Annullamento di una prenotazione da parte del cliente
+-- (Consentito solo se mancano almeno 4 ore all'inizio della proiezione)
+delete PR from PRENOTAZIONE PR
+join PROIEZIONE P on PR.FK_Proiezione = P.ID_Proiezione
+where PR.ID_Prenotazione = 1 -- Numero biglietto
+  and timestampdiff(HOUR, NOW(), P.Data_Ora) >= 4;
 
--- 7. operazione 07: cancellazione prenotazioni legate a proiezioni terminate (scarto di 2 anni) usando una join
-delete pr
-from prenotazione pr
-join proiezione p on pr.fk_proiezione = p.id_proiezione
-where TIMESTAMPDIFF(year, p.data_ora, NOW()) >= 2;
+-- 7. 
+
 
 -- 8. subquery con is null: mostra i film in catalogo che non hanno ricevuto nessuna prenotazione
 select f.titolo
@@ -112,9 +112,12 @@ order by totale_prenotazioni desc;
 
 -- ------------------------------------------------------------------------------
 
+use tor_vercinema;
+
 delimiter //
 
 -- trigger per blocco vendita biglietti vm18 ai minorenni
+-- devo impedire ai minori di acquistare biglietti classificati vm 18
 create trigger check_eta_prenotazione
 before insert on prenotazione
 for each row
@@ -137,6 +140,77 @@ begin
     if classificazione_film = 'vm18' and eta_utente < 18 then
         signal sqlstate '45000'
         set message_text = 'errore: divieto di vendita, utente minorenne per film vm18';
+    end if;
+end //
+
+delimiter ;
+
+delimiter //
+
+-- Trigger: Sovrapposizione di più film nella stessa sala
+-- devo controllare che l'inizio del film successivo in quella sala non si sovrapponga con la fine del precedente
+create trigger check_sovrapposizione_proiezioni
+before insert on proiezione
+for each row
+begin
+    -- dichiarazione delle variabili di appoggio
+    declare durata_nuovo int;
+    declare fine_nuovo datetime;
+    declare sovrapposizioni int;
+
+    -- 1. estrapolo la durata del film che si vuole proiettare
+    select durata into durata_nuovo
+    from film
+    where id_film = new.fk_film;
+
+    -- 2. calcolo l'orario di fine della nuova proiezione (aggiungendo i minuti)
+    set fine_nuovo = date_add(new.data_ora, interval durata_nuovo minute);
+
+    -- 3. conto quante proiezioni già esistono in quella stessa sala 
+    -- che si accavallano temporalmente con la nuova
+    select count(*) into sovrapposizioni
+    from proiezione p
+    join film f on p.fk_film = f.id_film
+    where p.fk_sala = new.fk_sala
+      and p.data_ora < fine_nuovo                                     -- inizio di quella vecchia < fine della nuova
+      and date_add(p.data_ora, interval f.durata minute) > new.data_ora;  -- fine di quella vecchia > inizio della nuova
+
+    -- 4. se il conteggio è maggiore di zero, blocco tutto
+    if sovrapposizioni > 0 then
+        signal sqlstate '45000'
+        set message_text = 'errore di business: impossibile inserire la proiezione. esiste gia un film in questa sala in questo orario.';
+    end if;
+end //
+
+delimiter ;
+
+delimiter //
+
+-- Trigger: Integrità spaziale del Posto rispetto alla Sala
+-- quando il cliente compra un biglietto per la proiezione il db deve assicurarsi che il fk_posto esista nella fk_sala associata alla proiezione acquistata
+create trigger check_integrita_spaziale_posto
+before insert on prenotazione
+for each row
+begin
+    -- variabili per memorizzare gli id delle sale da confrontare
+    declare sala_della_proiezione int;
+    declare sala_del_posto int;
+
+    -- 1. trovo l'id della sala in cui verrà proiettato il film scelto
+    select fk_sala into sala_della_proiezione
+    from proiezione
+    where id_proiezione = new.fk_proiezione;
+
+    -- 2. trovo l'id della sala a cui appartiene fisicamente il posto scelto
+    select fk_sala into sala_del_posto
+    from posto
+    where id_posto = new.fk_posto;
+
+    -- 3. confronto le due sale: se sono diverse, l'utente sta barando
+    -- o il sistema sta commettendo un errore
+    if sala_della_proiezione != sala_del_posto then
+        signal sqlstate '45000'
+        set message_text = 'errore di business: violazione integrita spaziale. il posto scelto non fa parte della sala in cui si tiene la proiezione.';
     end if;
 end //
 
